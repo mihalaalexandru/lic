@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './Register.css';
 
 function Register() {
@@ -10,6 +12,7 @@ function Register() {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,7 +20,7 @@ function Register() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -50,11 +53,35 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log('Form submitted:', formData);
-      // Add your API call here
+      try {
+        if (!isLogin) {
+          await axios.post('http://localhost:3000/api/auth/register', {
+            name: formData.username,
+            email: formData.email,
+            password: formData.password
+          });
+          
+          alert('Cont creat cu succes! Te poti autentifica acum.');
+          toggleMode();
+        } else {
+          const response = await axios.post('http://localhost:3000/api/auth/login', {
+            email: formData.email,
+            password: formData.password
+          });
+          
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        setErrors({ 
+          submit: error.response?.data?.message || 'A aparut o eroare la conectare' 
+        });
+      }
     }
   };
 
@@ -138,6 +165,8 @@ function Register() {
             </div>
           )}
 
+          {errors.submit && <div className="error-message" style={{ textAlign: 'center', marginBottom: '10px' }}>{errors.submit}</div>}
+
           <button type="submit" className="submit-btn">
             {isLogin ? 'Sign In' : 'Sign Up'}
           </button>
@@ -146,7 +175,7 @@ function Register() {
         <div className="auth-footer">
           <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button onClick={toggleMode} className="toggle-btn">
+            <button onClick={toggleMode} className="toggle-btn" type="button">
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
           </p>
