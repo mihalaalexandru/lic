@@ -17,14 +17,17 @@ datasource db {
 
 // 1. Susține Autentificarea, Sesiunile și Setările (Moneda)
 model User {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String        // Va stoca parola hash-uită (criptată)
-  name         String?
-  currency     String        @default("USD") // Susține butoanele USD/EUR/RON
-  transactions Transaction[]
-  watchlists   Watchlist[]
-  createdAt    DateTime      @default(now())
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
+  password         String
+  name             String?
+  currency         String        @default("USD")
+  profilePicture   String?       
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  transactions     Transaction[]
+  watchlists       Watchlist[]
+  createdAt        DateTime      @default(now())
 }
 
 // 2. Susține Simulatorul, Activele și Alertele (Sectoare)

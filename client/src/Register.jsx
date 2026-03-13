@@ -174,10 +174,21 @@ function Register() {
 
         <div className="auth-footer">
           <p>
+            <div className="auth-footer">
+          <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button onClick={toggleMode} className="toggle-btn" type="button">
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
+          </p>
+          {isLogin && (
+            <p style={{ marginTop: '10px' }}>
+              <button onClick={() => navigate('/forgot-password')} className="toggle-btn" type="button" style={{ fontSize: '14px', color: '#64748b' }}>
+                Forgot Password?
+              </button>
+            </p>
+          )}
+        </div>
           </p>
         </div>
       </div>
