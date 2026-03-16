@@ -24,12 +24,82 @@ axios.interceptors.request.use((config) => {
 });
 
 function Dashboard() {
+  const [portfolio, setPortfolio] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [buyQuantity, setBuyQuantity] = useState('');
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [markets, setMarkets] = useState([]);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [selectedSellAsset, setSelectedSellAsset] = useState(null);
+  const [sellQuantity, setSellQuantity] = useState('');
+
+useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/api/assets');
+        setAssets(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    if (activeView === 'markets') {
+      fetchAssets();
+    }
+  }, [activeView]);
+
+  const handleBuyAsset = async () => {
+    if (!buyQuantity || buyQuantity <= 0) return;
+    try {
+      const res = await axios.post('http://localhost:3000/api/trade/buy', {
+        userId: user.id,
+        assetId: selectedAsset.id,
+        quantity: buyQuantity
+      });
+      const updatedUser = { ...user, balance: res.data.newBalance };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      alert('Asset purchased successfully!');
+      setIsBuyModalOpen(false);
+      setBuyQuantity('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Transaction failed');
+    }
+  };
+
+  const handleSellAsset = async () => {
+    if (!sellQuantity || sellQuantity <= 0) return;
+    if (sellQuantity > selectedSellAsset.quantity) {
+      return alert('You cannot sell more than you own!');
+    }
+
+    try {
+      const res = await axios.post('http://localhost:3000/api/trade/sell', {
+        userId: user.id,
+        assetId: selectedSellAsset.asset.id,
+        quantity: sellQuantity
+      });
+      
+      const updatedUser = { ...user, balance: res.data.newBalance };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      alert('Asset sold successfully!');
+      setIsSellModalOpen(false);
+      setSellQuantity('');
+      
+      const portRes = await axios.get(`http://localhost:3000/api/portfolio/${user.id}`);
+      setPortfolio(portRes.data);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Transaction failed');
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -57,6 +127,22 @@ function Dashboard() {
       console.error(error);
     }
   };
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      try {
+        if (user && user.id) {
+          const res = await axios.get(`http://localhost:3000/api/portfolio/${user.id}`);
+          setPortfolio(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (activeView === 'portfolio') {
+      fetchPortfolio();
+    }
+  }, [activeView, user]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -94,14 +180,46 @@ function Dashboard() {
               </div>
               
               <div className="stat-card">
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
-                   Total P&L
-                </h3>
-                <h2>$6,240</h2>
-                <span style={{ fontSize: '14px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-                  <TrendingUp size={16}/> +12%
-                </span>
-              </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+    <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>Available Balance</p>
+    <div style={{ padding: '4px', background: '#ecfdf5', borderRadius: '4px' }}>
+      <TrendingUp size={16} color="#10b981" />
+    </div>
+  </div>
+  
+  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#0f172a', margin: '0 0 16px 0' }}>
+    {new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: user.currency || 'USD' 
+    }).format(user.balance || 0)}
+  </h2>
+  
+  <button 
+    className="custom-file-btn" 
+    style={{ width: '100%', justifyContent: 'center', backgroundColor: '#0f172a', color: 'white', border: 'none' }}
+    onClick={async () => {
+      const amount = prompt("Enter the amount of virtual USD to deposit:");
+      if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+        try {
+          const res = await axios.post('http://localhost:3000/api/trade/deposit', {
+            userId: user.id,
+            amount: parseFloat(amount)
+          });
+          
+          const updatedUser = { ...user, balance: res.data.newBalance };
+          setUser(updatedUser);
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          alert(`Success! Your new balance is ${res.data.newBalance} ${user.currency || 'USD'}`);
+        } catch (err) {
+          alert(err.response?.data?.message || 'Deposit failed');
+        }
+      }
+    }}
+  >
+    <Plus size={16} style={{ marginRight: '8px' }} /> Add Funds
+  </button>
+</div>
 
               <div className="stat-card">
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
@@ -179,66 +297,154 @@ function Dashboard() {
             </div>
           </>
         );
-      case 'markets':
+     case 'markets':
+        const filteredAssets = assets.filter(asset => 
+          asset.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          asset.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
         return (
-          <>
-            <div className="header header-actions">
-              <div>
-                <h1>Markets</h1>
-                <p>Explore assets and add them to your portfolio.</p>
+          <div className="markets-section">
+            <header className="header">
+              <h1>Markets</h1>
+              <p>Explore assets and expand your portfolio.</p>
+            </header>
+
+            <div className="search-container">
+              <Search className="search-icon" size={20} />
+              <input 
+                type="text" 
+                placeholder="Search by symbol or name..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
+
+            <div className="assets-list-container">
+              {filteredAssets.map(asset => {
+                const isPositive = asset.change24h >= 0;
+                return (
+                  <div key={asset.id} className="asset-row-clean">
+                    <div className="asset-info-main">
+                      <span className="asset-symbol">{asset.symbol}</span>
+                      <span className="asset-name">{asset.name}</span>
+                      <span className="asset-type-badge">{asset.type}</span>
+                    </div>
+                    
+                    <div className="asset-price-section">
+                      <div className="price-wrapper">
+                        <span className="current-price">${asset.currentPrice.toFixed(2)}</span>
+                        <span className={`price-change ${isPositive ? 'positive' : 'negative'}`}>
+                          {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                          {Math.abs(asset.change24h || 0).toFixed(2)}%
+                        </span>
+                      </div>
+                      <button 
+                        className="trade-btn-outline"
+                        onClick={() => {
+                          setSelectedAsset(asset);
+                          setIsBuyModalOpen(true);
+                        }}
+                      >
+                        Trade
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      case 'portfolio':
+        const totalPortfolioValue = portfolio.reduce((sum, item) => sum + item.currentValue, 0);
+        const totalInvested = portfolio.reduce((sum, item) => sum + (item.quantity * item.avgBuyPrice), 0);
+        const totalPnL = totalPortfolioValue - totalInvested;
+        const isPnLPositive = totalPnL >= 0;
+
+        return (
+          <div className="portfolio-section">
+            <header className="header">
+              <h1>My Assets</h1>
+              <p>Track your assets and overall performance.</p>
+            </header>
+
+            <div className="portfolio-summary-cards">
+              <div className="summary-box">
+                <span className="summary-label">Total Portfolio Value</span>
+                <span className="summary-value">
+                  ${totalPortfolioValue.toFixed(2)}
+                </span>
               </div>
-              <div className="search-container">
-                <Search size={18} color="#94a3b8" />
-                <input 
-                  type="text" 
-                  placeholder="Search by name or symbol..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="summary-divider"></div>
+              <div className="summary-box">
+                <span className="summary-label">Total P&L</span>
+                <span className={`summary-value ${isPnLPositive ? 'text-green' : 'text-red'}`}>
+                  {isPnLPositive ? '+' : ''}${totalPnL.toFixed(2)}
+                </span>
               </div>
             </div>
 
-            <div className="markets-grid">
-              {filteredMarkets.map(asset => (
-                <div key={asset.id} className="market-card">
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {asset.symbol} 
-                      <span style={{ fontSize: '12px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#64748b' }}>
-                        {asset.type}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>{asset.name}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '16px' }}>
-                        ${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px', marginTop: '2px' }}>
-                        <TrendingUp size={14}/> 0.00%
-                      </div>
-                    </div>
-                    <button className="add-btn" title="Add to Watchlist">
-                      <Plus size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              
-              {filteredMarkets.length === 0 && (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
-                  Nu am gasit niciun activ.
-                </div>
-              )}
+            <div className="table-container">
+              <table className="portfolio-table">
+                <thead>
+                  <tr>
+                    <th>ASSET NAME</th>
+                    <th>SYMBOL</th>
+                    <th>QUANTITY</th>
+                    <th>AVG. BUY PRICE</th>
+                    <th>CURRENT PRICE</th>
+                    <th>TOTAL VALUE</th>
+                    <th>PROFIT/LOSS</th>
+                    <th>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {portfolio.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                        No assets found. Start trading to build your portfolio.
+                      </td>
+                    </tr>
+                  ) : (
+                    portfolio.map(item => {
+                      const isPositive = item.profitLoss >= 0;
+                      return (
+                        <tr key={item.id}>
+                          <td>
+                            <div className="table-asset-name">
+                              <span className="table-icon">{item.asset.symbol.charAt(0)}</span>
+                              {item.asset.name}
+                            </div>
+                          </td>
+                          <td><span className="badge">{item.asset.symbol}</span></td>
+                          <td>{item.quantity}</td>
+                          <td>${item.avgBuyPrice.toFixed(2)}</td>
+                          <td className="text-blue">${item.asset.currentPrice.toFixed(2)}</td>
+                          <td>${item.currentValue.toFixed(2)}</td>
+                          <td>
+                            <span className={`pnl-badge ${isPositive ? 'pnl-positive' : 'pnl-negative'}`}>
+                              {isPositive ? '+' : ''}${item.profitLoss.toFixed(2)} ({isPositive ? '+' : ''}{item.profitLossPercentage.toFixed(2)}%)
+                            </span>
+                          </td>
+                          <td>
+                            <button 
+                              className="sell-btn"
+                              onClick={() => {
+                                setSelectedSellAsset(item);
+                                setIsSellModalOpen(true);
+                              }}
+                            >
+                              Sell
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
-        );
-      case 'portfolio':
-        return (
-          <div className="header">
-            <h1>My Portfolio</h1>
-            <p>Detailed breakdown of your current holdings.</p>
           </div>
         );
       case 'transactions':
@@ -479,6 +685,77 @@ function Dashboard() {
       <main className="main-content">
         {renderContent()}
       </main>
+      {isBuyModalOpen && selectedAsset && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h2>Buy {selectedAsset.symbol}</h2>
+            <div className="modal-price-box">
+              <span>Current Price</span>
+              <h3>${selectedAsset.currentPrice.toFixed(2)}</h3>
+            </div>
+            
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label>Quantity</label>
+              <input 
+                type="number" 
+                min="0" 
+                step="0.01" 
+                value={buyQuantity}
+                onChange={(e) => setBuyQuantity(e.target.value)}
+                placeholder="e.g. 1.5"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              />
+            </div>
+
+            <div className="modal-summary">
+              <span>Estimated Cost:</span>
+              <span>${(selectedAsset.currentPrice * (buyQuantity || 0)).toFixed(2)}</span>
+            </div>
+
+            <div className="modal-buttons">
+              <button className="cancel-btn" onClick={() => setIsBuyModalOpen(false)}>Cancel</button>
+              <button className="confirm-btn" onClick={handleBuyAsset}>Confirm Purchase</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSellModalOpen && selectedSellAsset && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h2>Sell {selectedSellAsset.asset.symbol}</h2>
+            <div className="modal-price-box">
+              <span>Current Price</span>
+              <h3>${selectedSellAsset.asset.currentPrice.toFixed(2)}</h3>
+            </div>
+            
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label>Quantity to Sell (Max: {selectedSellAsset.quantity})</label>
+              <input 
+                type="number" 
+                min="0" 
+                max={selectedSellAsset.quantity}
+                step="0.01" 
+                value={sellQuantity}
+                onChange={(e) => setSellQuantity(e.target.value)}
+                placeholder="e.g. 1.5"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              />
+            </div>
+
+            <div className="modal-summary">
+              <span>Estimated Return:</span>
+              <span className="text-green">${(selectedSellAsset.asset.currentPrice * (sellQuantity || 0)).toFixed(2)}</span>
+            </div>
+
+            <div className="modal-buttons">
+              <button className="cancel-btn" onClick={() => setIsSellModalOpen(false)}>Cancel</button>
+              <button className="sell-confirm-btn" onClick={handleSellAsset}>Confirm Sale</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

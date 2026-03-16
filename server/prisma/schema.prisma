@@ -1,11 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// server/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,58 +7,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. Susține Autentificarea, Sesiunile și Setările (Moneda)
 model User {
   id               Int           @id @default(autoincrement())
   email            String        @unique
   password         String
   name             String?
+  balance          Float         @default(1000.0)
   currency         String        @default("USD")
-  profilePicture   String?       
+  profilePicture   String?       @db.Text
   resetToken       String?
   resetTokenExpiry DateTime?
+  portfolio        Portfolio[]
   transactions     Transaction[]
   watchlists       Watchlist[]
   createdAt        DateTime      @default(now())
 }
 
-// 2. Susține Simulatorul, Activele și Alertele (Sectoare)
-model Asset {
-  id           Int            @id @default(autoincrement())
-  symbol       String         @unique // ex: AAPL, BTC
-  name         String         // ex: Apple Inc., Bitcoin
-  type         String         // ex: STOCK, CRYPTO (Pentru Pie Chart-ul de Alocare)
-  sector       String?        // ex: Technology (Pentru alerta "Tech sector concentration")
-  currentPrice Float          @default(0) // Prețul fix de ACUM
-  transactions Transaction[]
-  watchlists   Watchlist[]
-  priceHistory PriceHistory[] // Legătura cu istoricul
-  updatedAt    DateTime       @updatedAt
+model Portfolio {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  assetId   Int
+  quantity  Float    @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId])
 }
 
-// NOU: 3. Susține Graficul de Evoluție (Line Chart)
+model Asset {
+  id             Int            @id @default(autoincrement())
+  symbol         String         @unique
+  name           String
+  type           String
+  sector         String?
+  currentPrice   Float          @default(0)
+  portfolio      Portfolio[]
+  transactions   Transaction[]
+  watchlists     Watchlist[]
+  priceHistory   PriceHistory[]
+  updatedAt      DateTime       @updatedAt
+}
+
 model PriceHistory {
   id        Int      @id @default(autoincrement())
   assetId   Int
   asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  price     Float    // Prețul pe care îl avea activul la acel moment
-  timestamp DateTime @default(now()) // Data și ora exactă
+  price     Float
+  timestamp DateTime @default(now())
 }
 
-// 4. Susține pagina "My Assets" (Tranzacțiile, P&L, Avg Buy Price)
 model Transaction {
   id              Int      @id @default(autoincrement())
   userId          Int
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   assetId         Int
   asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  type            String   // 'BUY' sau 'SELL'
-  quantity        Float    // Câte bucăți ai cumpărat/vândut
-  priceAtPurchase Float    // Prețul per bucată la momentul tranzacției (Avg. Buy Price)
+  type            String
+  quantity        Float
+  priceAtPurchase Float
   date            DateTime @default(now())
 }
 
-// 5. Susține zona de "Watchlist" din Dashboard
 model Watchlist {
   id      Int   @id @default(autoincrement())
   userId  Int
@@ -74,6 +75,5 @@ model Watchlist {
   assetId Int
   asset   Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
-  // Un utilizator nu poate avea același activ de două ori în watchlist
-  @@unique([userId, assetId]) 
+  @@unique([userId, assetId])
 }

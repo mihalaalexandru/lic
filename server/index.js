@@ -3,6 +3,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const seedAndSimulate = require('./utils/marketSimulator');
+const tradeRoutes = require('./routes/tradeRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
 
 const app = express();
 
@@ -11,6 +13,8 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/trade', tradeRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 seedAndSimulate();
 
