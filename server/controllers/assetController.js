@@ -3,16 +3,37 @@ const prisma = new PrismaClient();
 
 const getAssets = async (req, res) => {
   try {
-    const assets = await prisma.asset.findMany({
-      orderBy: { symbol: 'asc' }
-    });
+    const assets = await prisma.asset.findMany();
     res.json(assets);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Eroare la preluarea activelor' });
+    res.status(500).json({ message: 'Error' });
   }
 };
 
-module.exports = {
-  getAssets
+const getAssetHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    let history = await prisma.priceHistory.findMany({
+      where: { assetId: parseInt(id) },
+      orderBy: { id: 'desc' },
+      take: 40
+    });
+
+    history = history.reverse();
+
+    const formattedHistory = history.map(record => {
+      const dateValue = record.createdAt || record.date || new Date();
+      return {
+        time: new Date(dateValue).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        price: Number(record.price)
+      };
+    });
+
+    res.json(formattedHistory);
+  } catch (error) {
+    res.status(500).json({ message: 'Error' });
+  }
 };
+
+module.exports = { getAssets, getAssetHistory };

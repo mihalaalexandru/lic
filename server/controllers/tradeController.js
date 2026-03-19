@@ -6,22 +6,24 @@ const depositFunds = async (req, res) => {
     const { userId, amount } = req.body;
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Please enter a valid amount' });
+      return res.status(400).json({ message: 'Invalid amount' });
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: {
-        balance: { increment: parseFloat(amount) }
-      }
+    const updatedUser = await prisma.$transaction(async (prisma) => {
+      const user = await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: { balance: { increment: parseFloat(amount) } }
+      });
+      
+      await prisma.balanceHistory.create({
+        data: { userId: user.id, balance: user.balance }
+      });
+      
+      return user;
     });
 
-    res.json({ 
-      message: 'Deposit successful', 
-      newBalance: updatedUser.balance 
-    });
+    res.json({ message: 'Deposit successful', newBalance: updatedUser.balance });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Error depositing funds' });
   }
 };
@@ -39,10 +41,12 @@ const buyAsset = async (req, res) => {
       return res.status(400).json({ message: 'Insufficient balance' });
     }
 
+    const newBalance = user.balance - totalCost;
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { balance: { decrement: totalCost } }
+        data: { balance: newBalance }
       }),
       prisma.portfolio.upsert({
         where: { userId_assetId: { userId: user.id, assetId: asset.id } },
@@ -57,15 +61,14 @@ const buyAsset = async (req, res) => {
           quantity: parseFloat(quantity),
           priceAtPurchase: asset.currentPrice
         }
+      }),
+      prisma.balanceHistory.create({
+        data: { userId: user.id, balance: newBalance }
       })
     ]);
 
-    res.json({ 
-      message: 'Purchase successful',
-      newBalance: user.balance - totalCost
-    });
+    res.json({ message: 'Purchase successful', newBalance });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Transaction failed' });
   }
 };
@@ -86,11 +89,12 @@ const sellAsset = async (req, res) => {
     }
 
     const totalRevenue = asset.currentPrice * sellQty;
+    const newBalance = user.balance + totalRevenue;
 
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { balance: { increment: totalRevenue } }
+        data: { balance: newBalance }
       }),
       prisma.portfolio.update({
         where: { id: portfolioItem.id },
@@ -104,16 +108,30 @@ const sellAsset = async (req, res) => {
           quantity: sellQty,
           priceAtPurchase: asset.currentPrice
         }
+      }),
+      prisma.balanceHistory.create({
+        data: { userId: user.id, balance: newBalance }
       })
     ]);
 
-    res.json({ 
-      message: 'Sale successful',
-      newBalance: user.balance + totalRevenue
-    });
+    res.json({ message: 'Sale successful', newBalance });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Transaction failed' });
   }
 };
-module.exports = { depositFunds, buyAsset, sellAsset };
+
+const getTransactions = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const transactions = await prisma.transaction.findMany({
+      where: { userId: parseInt(userId) },
+      include: { asset: true },
+      orderBy: { date: 'desc' }
+    });
+    res.json(transactions);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching transactions' });
+  }
+};
+
+module.exports = { depositFunds, buyAsset, sellAsset, getTransactions };

@@ -8,19 +8,28 @@ datasource db {
 }
 
 model User {
-  id               Int           @id @default(autoincrement())
-  email            String        @unique
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
   password         String
   name             String?
-  balance          Float         @default(1000.0)
-  currency         String        @default("USD")
-  profilePicture   String?       @db.Text
+  balance          Float            @default(0)
+  currency         String           @default("USD")
+  profilePicture   String?          @db.Text
   resetToken       String?
   resetTokenExpiry DateTime?
   portfolio        Portfolio[]
   transactions     Transaction[]
   watchlists       Watchlist[]
-  createdAt        DateTime      @default(now())
+  balanceHistory   BalanceHistory[]
+  createdAt        DateTime         @default(now())
+}
+
+model BalanceHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  balance   Float
+  date      DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Portfolio {
@@ -41,6 +50,7 @@ model Asset {
   type           String
   sector         String?
   currentPrice   Float          @default(0)
+  change24h    Float          @default(0)
   portfolio      Portfolio[]
   transactions   Transaction[]
   watchlists     Watchlist[]

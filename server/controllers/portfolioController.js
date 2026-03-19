@@ -54,4 +54,32 @@ const getPortfolio = async (req, res) => {
   }
 };
 
-module.exports = { getPortfolio };
+const getBalanceHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const history = await prisma.balanceHistory.findMany({
+      where: { userId: parseInt(userId) },
+      orderBy: { date: 'asc' }
+    });
+
+    if (history.length === 0) {
+      const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+      return res.json([{ 
+        name: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+        value: user.balance 
+      }]);
+    }
+
+    const formattedHistory = history.map(record => ({
+      name: new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      value: parseFloat(record.balance.toFixed(2))
+    }));
+
+    res.json(formattedHistory);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching balance history' });
+  }
+};
+
+module.exports = { getPortfolio, getBalanceHistory };
