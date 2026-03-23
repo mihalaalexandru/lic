@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
 const prisma = new PrismaClient();
 
 const getAssets = async (req, res) => {
@@ -23,9 +24,8 @@ const getAssetHistory = async (req, res) => {
     history = history.reverse();
 
     const formattedHistory = history.map(record => {
-      const dateValue = record.createdAt || record.date || new Date();
       return {
-        time: new Date(dateValue).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        time: new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         price: Number(record.price)
       };
     });
@@ -36,4 +36,13 @@ const getAssetHistory = async (req, res) => {
   }
 };
 
-module.exports = { getAssets, getAssetHistory };
+const getMarketNews = async (req, res) => {
+  try {
+    const response = await axios.get('https://api.rss2json.com/v1/api.json?rss_url=https://finance.yahoo.com/news/rssindex');
+    res.json(response.data.items);
+  } catch (error) {
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
+module.exports = { getAssets, getAssetHistory, getMarketNews };

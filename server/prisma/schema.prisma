@@ -61,9 +61,9 @@ model Asset {
 model PriceHistory {
   id        Int      @id @default(autoincrement())
   assetId   Int
-  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
   price     Float
-  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {

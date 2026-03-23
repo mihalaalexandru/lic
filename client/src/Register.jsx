@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './Register.css';
 
 function Register() {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Setăm starea inițială pe baza link-ului curent
+  const [isLogin, setIsLogin] = useState(location.pathname === '/login');
+  
+  // Ascultăm schimbările de link și actualizăm formularul
+  useEffect(() => {
+    setIsLogin(location.pathname === '/login');
+    setErrors({});
+  }, [location.pathname]);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  
   const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -65,7 +76,7 @@ function Register() {
           });
           
           alert('Cont creat cu succes! Te poti autentifica acum.');
-          toggleMode();
+          navigate('/login'); // Trimitem utilizatorul la login după creare
         } else {
           const response = await axios.post('http://localhost:3000/api/auth/login', {
             email: formData.email,
@@ -86,14 +97,12 @@ function Register() {
   };
 
   const toggleMode = () => {
-    setIsLogin(!isLogin);
-    setErrors({});
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
+    // Navigăm către cealaltă rută în loc să schimbăm doar o variabilă internă
+    if (isLogin) {
+      navigate('/register');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (
@@ -165,7 +174,11 @@ function Register() {
             </div>
           )}
 
-          {errors.submit && <div className="error-message" style={{ textAlign: 'center', marginBottom: '10px' }}>{errors.submit}</div>}
+          {errors.submit && (
+            <div className="error-message" style={{ textAlign: 'center', marginBottom: '10px' }}>
+              {errors.submit}
+            </div>
+          )}
 
           <button type="submit" className="submit-btn">
             {isLogin ? 'Sign In' : 'Sign Up'}
@@ -174,8 +187,6 @@ function Register() {
 
         <div className="auth-footer">
           <p>
-            <div className="auth-footer">
-          <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button onClick={toggleMode} className="toggle-btn" type="button">
               {isLogin ? 'Sign Up' : 'Sign In'}
@@ -183,13 +194,16 @@ function Register() {
           </p>
           {isLogin && (
             <p style={{ marginTop: '10px' }}>
-              <button onClick={() => navigate('/forgot-password')} className="toggle-btn" type="button" style={{ fontSize: '14px', color: '#64748b' }}>
+              <button 
+                onClick={() => navigate('/forgot-password')} 
+                className="toggle-btn" 
+                type="button" 
+                style={{ fontSize: '14px', color: '#64748b' }}
+              >
                 Forgot Password?
               </button>
             </p>
           )}
-        </div>
-          </p>
         </div>
       </div>
     </div>

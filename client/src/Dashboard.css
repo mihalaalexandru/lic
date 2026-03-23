@@ -1,3 +1,149 @@
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #0f172a;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-sidebar: #f8fafc;
+  --border-color: #e2e8f0;
+  --bg-hover: #f1f5f9;
+}
+
+[data-theme='dark'] {
+  /* Paleta Crypto Pro (tip Binance/TradingView) */
+  --bg-main: #0b0e11;       /* Negru mat absolut pentru fundalul paginii */
+  --bg-card: #181a20;       /* Gri foarte închis pentru carduri/tabele */
+  --bg-sidebar: #0b0e11;    /* Sidebar-ul se contopește cu fundalul */
+  --text-main: #eaecef;     /* Alb clar, ușor estompat pentru a nu obosi ochii */
+  --text-muted: #848e9c;    /* Gri neutru pentru texte secundare */
+  --text-sidebar: #eaecef;
+  --border-color: #2b3139;  /* Linii de demarcație extrem de fine */
+  --bg-hover: #2b3139;      /* Culoarea de hover pentru rândurile din tabel */
+}
+
+/* Restul codului rămâne exact cum l-am pus în mesajul anterior... */
+
+/* Forțăm background-ul pe absolut tot ecranul */
+html, body, #root {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main);
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+}
+
+.main-content {
+  flex: 1;
+  padding: 32px 48px;
+  background-color: var(--bg-main); /* Repară albul din jurul tabelului */
+  overflow-y: auto;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item {
+  color: #94a3b8;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-item.active {
+  color: #f8fafc;
+  background-color: var(--bg-hover);
+  border-right: 3px solid #3b82f6;
+}
+
+.menu-item:hover {
+  background-color: var(--bg-hover);
+  color: #f8fafc;
+}
+
+.stat-card, .modal-card, .news-section > div > div, .auth-form {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.header h1, .stat-card h3, .modal-card h2, .modal-price-box h3, .form-group label, .settings-label, .auth-form h3 {
+  color: var(--text-main) !important;
+}
+
+.header p, .summary-label, .stat-card > div > p, .helper-text {
+  color: var(--text-muted) !important;
+}
+
+.settings-input, .settings-select, .search-container, .modal-card input {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.table-container {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden; 
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.portfolio-table th {
+  background-color: var(--bg-hover); /* Un fundal ușor diferit pentru header-ul tabelului */
+  color: var(--text-main);
+  padding: 16px 24px;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.portfolio-table td {
+  padding: 16px 24px;
+  color: var(--text-main);
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+}
+
+/* Efect elegant când treci cu mouse-ul peste un rând */
+.portfolio-table tbody tr:hover {
+  background-color: var(--bg-hover);
+  transition: background-color 0.2s ease;
+}
+
+.badge {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .dashboard-container {
   display: flex;
   width: 100vw;
@@ -904,3 +1050,250 @@
   border: none;
   font-size: 15px;
 }
+
+.credit-card-preview {
+  background: linear-gradient(135deg, #1e293b, #3b82f6);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.credit-card-preview:hover {
+  transform: translateY(-5px);
+}
+
+.card-chip {
+  width: 45px;
+  height: 30px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.card-chip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0,0,0,0.2);
+}
+
+.card-number-display {
+  font-family: 'Courier New', monospace;
+  font-size: 22px;
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.card-details-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-details-display > div > div:first-child {
+  opacity: 0.7;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.deposit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.deposit-grid .form-group input {
+  width: 100% !important;
+  box-sizing: border-box; 
+}
+.credit-card-preview {
+  background: linear-gradient(135deg, #1e293b, #3b82f6);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.credit-card-preview:hover {
+  transform: translateY(-5px);
+}
+
+.card-chip {
+  width: 45px;
+  height: 30px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.card-chip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0,0,0,0.2);
+}
+
+.card-number-display {
+  font-family: 'Courier New', monospace;
+  font-size: 22px;
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.card-details-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-details-display > div > div:first-child {
+  opacity: 0.7;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.deposit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* --- CHATBOT AI --- */
+.chatbot-toggle-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  border: none;
+}
+
+.chatbot-toggle-btn:hover {
+  transform: scale(1.1);
+}
+
+.chatbot-window {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  width: 350px;
+  height: 450px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.chatbot-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-bubble.bot {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-bubble.user {
+  background-color: #3b82f6;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.chatbot-input-area {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+}
+
+.chatbot-input-area input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  outline: none;
+  padding: 8px;
+}
+
+.chatbot-input-area button {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
